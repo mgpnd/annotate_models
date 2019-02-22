@@ -6,15 +6,21 @@
 
 namespace :db do
   [:migrate, :rollback].each do |cmd|
+    annotation_options_task = if Rake::Task.task_defined?('app:set_annotation_options')
+                                'app:set_annotation_options'
+                              else
+                                'set_annotation_options'
+                              end
+
     task cmd do
-      Rake::Task['set_annotation_options'].invoke
+      Rake::Task[annotation_options_task].invoke
       Annotate::Migration.update_annotations
     end
 
     namespace cmd do
       [:change, :up, :down, :reset, :redo].each do |t|
         task t do
-          Rake::Task['set_annotation_options'].invoke
+          Rake::Task[annotation_options_task].invoke
           Annotate::Migration.update_annotations
         end
       end
@@ -46,6 +52,8 @@ module Annotate
     def self.update_routes
       if Rake::Task.task_defined?("annotate_routes")
         Rake::Task["annotate_routes"].invoke
+      elsif Rake::Task.task_defined?("app:annotate_routes")
+        Rake::Task["app:annotate_routes"].invoke
       end
     end
   end
